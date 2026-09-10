@@ -1,0 +1,17 @@
+/* Append to ~/.config/waybar/style.css.
+ * The Nerd Font family matters: the module shows the Neovim glyph U+E62B.
+ * No Nerd Font? Set NVIM_KEYS_ICON to any text you like, e.g.
+ *   "exec": "NVIM_KEYS_ICON=nvim ~/.local/bin/nvim-keys waybar"
+ */
+
+#custom-nvim-keys {
+    font-family: "JetBrainsMono Nerd Font", Cantarell, sans-serif;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: #8bc34a;
+}
+
+#custom-nvim-keys:hover {
+    background-color: #285577;
+    color: white;
+}

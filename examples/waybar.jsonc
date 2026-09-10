@@ -1,0 +1,12 @@
+// Add "custom/nvim-keys" to modules-right (or modules-left) in
+// ~/.config/waybar/config.jsonc, then add this module definition:
+{
+    "custom/nvim-keys": {
+        "format": "{}",
+        "return-type": "json",
+        "interval": 600,
+        "exec": "~/.local/bin/nvim-keys waybar",
+        "on-click": "~/.local/bin/nvim-keys gui",
+        "on-click-right": "~/.local/bin/nvim-keys dump"
+    }
+}

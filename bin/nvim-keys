@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# nvim-keys — browse every keymap of Neovim and its plugins.
+#
+#   nvim-keys gui       open the window (rebuilds the cache if it is stale)
+#   nvim-keys dump      rebuild the cache (runs a headless Neovim)
+#   nvim-keys waybar    JSON for a Waybar custom module
+#   nvim-keys list      plain text listing
+#   nvim-keys json      print the raw cache
+set -euo pipefail
+
+# Resolve the install root: works both from a git checkout and from
+# ~/.local/share/nvim-keys, including when this file is a symlink.
+self="${BASH_SOURCE[0]}"
+while [[ -L "$self" ]]; do
+    target="$(readlink "$self")"
+    [[ "$target" = /* ]] && self="$target" || self="$(dirname "$self")/$target"
+done
+here="$(cd "$(dirname "$self")" && pwd)"
+
+if [[ -f "$here/../lua/dump.lua" ]]; then
+    ROOT="$(cd "$here/.." && pwd)"          # git checkout: bin/nvim-keys
+    LUA_DIR="$ROOT/lua"
+    GUI="$ROOT/gui/nvim-keys-gui.py"
+else
+    ROOT="${NVIM_KEYS_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/nvim-keys}"
+    LUA_DIR="$ROOT"
+    GUI="$ROOT/gui.py"
+fi
+
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/nvim-keys"
+CACHE="$CACHE_DIR/keymaps.json"
+NVIM_CONFIG="${NVIM_APPNAME:+${XDG_CONFIG_HOME:-$HOME/.config}/$NVIM_APPNAME}"
+NVIM_CONFIG="${NVIM_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/nvim}"
+LOG="$CACHE_DIR/dump.log"
+
+mkdir -p "$CACHE_DIR"
+
+die() {
+    echo "nvim-keys: $1" >&2
+    exit 1
+}
+
+dump() {
+    command -v nvim >/dev/null || die "nvim not found in PATH"
+    local tmp
+    tmp="$(mktemp "$CACHE_DIR/keymaps.XXXXXX.json")"
+    if NVIM_KEYS_OUT="$tmp" nvim --headless \
+        --cmd "luafile $LUA_DIR/prelude.lua" \
+        -c "luafile $LUA_DIR/dump.lua" \
+        -c "qa!" </dev/null >/dev/null 2>"$LOG" && [[ -s "$tmp" ]]; then
+        mv "$tmp" "$CACHE"
+    else
+        rm -f "$tmp"
+        die "collection failed, see $LOG"
+    fi
+}
+
+# The cache is stale when it is missing or older than any Neovim config file
+cache_stale() {
+    [[ -s "$CACHE" ]] || return 0
+    local newer
+    newer="$(find "$NVIM_CONFIG" -type f \( -name '*.lua' -o -name '*.vim' -o -name '*.json' \) \
+        -newer "$CACHE" -print -quit 2>/dev/null || true)"
+    [[ -n "$newer" ]]
+}
+
+ensure_cache() {
+    cache_stale && dump || true
+}
+
+need_jq() {
+    command -v jq >/dev/null || die "jq not found in PATH"
+}
+
+case "${1:-gui}" in
+dump)
+    dump
+    need_jq
+    jq -r '"nvim-keys: \(.count) keymaps"' "$CACHE"
+    ;;
+gui)
+    ensure_cache
+    command -v python3 >/dev/null || die "python3 not found in PATH"
+    exec python3 "$GUI" "$CACHE"
+    ;;
+waybar)
+    icon="${NVIM_KEYS_ICON:-$'\ue62b'}"
+    if [[ -s "$CACHE" ]] && command -v jq >/dev/null; then
+        count="$(jq -r '.count' "$CACHE")"
+        sources="$(jq -r '[.keymaps[].plugin] | unique | length' "$CACHE")"
+        tooltip="Neovim: $count keymaps from $sources sources\\nLeft click — open, right click — refresh"
+    else
+        count="?"
+        tooltip="Cache is empty. Right click to build it."
+    fi
+    printf '{"text":"%s %s","tooltip":"%s","class":"nvim-keys"}\n' "$icon" "$count" "$tooltip"
+    ;;
+list)
+    ensure_cache
+    need_jq
+    jq -r '.keymaps[] | "\(.plugin)\t\(.mode)\t\(.display)\t\(.desc)"' "$CACHE" |
+        column -t -s $'\t'
+    ;;
+json)
+    ensure_cache
+    cat "$CACHE"
+    ;;
+-h | --help | help)
+    sed -n '2,10p' "$self" | sed 's/^# \{0,1\}//'
+    ;;
+*)
+    die "unknown command '${1}' (try: gui, dump, waybar, list, json)"
+    ;;
+esac
