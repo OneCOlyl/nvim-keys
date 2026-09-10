@@ -22,6 +22,9 @@ everything up front — including mappings from plugins that are still lazy-load
 - **Search everything.** Key, description, command, plugin, mode — all at once,
   in both notations (`ctrl+p` and `<C-P>` both match).
 - **Status bar module.** Waybar module with a live keymap count; click to open.
+- **Recipes.** A hand-written cheatsheet next to the collected keymaps: jumping
+  to a line, finding it, undoing changes, deleting and renaming files — each
+  entry with a concrete example. Extend it with your own file.
 - **English and Russian UI**, picked from your locale.
 
 ## How it works
@@ -75,10 +78,46 @@ Uninstall with `./install.sh --uninstall`.
 | `nvim-keys dump` | Rebuild the cache now |
 | `nvim-keys waybar` | Print JSON for a Waybar custom module |
 | `nvim-keys list` | Plain text listing for the terminal |
+| `nvim-keys recipes` | Print the cheatsheet with examples |
 | `nvim-keys json` | Print the raw cache |
 
 In the window: type to search, `Enter` copies the key, `F1` explains the
 notation, `Ctrl+R` rebuilds, `Esc` closes.
+
+### Recipes
+
+Not everything worth remembering is a keymap: `:earlier 10s`, `:g/TODO/#` or
+`:call delete(expand('%')) | bdelete!` never show up in `:map`. Those live in
+[`data/recipes.json`](data/recipes.json) and appear in the window as the
+**Recipes** source — key or command, description, and an example underneath.
+They are searched together with everything else, so typing `delete file` or
+`undo` finds them.
+
+Add your own in `~/.config/nvim-keys/recipes.json`, using the same shape; it is
+merged after the shipped file:
+
+```json
+{
+  "categories": [
+    {
+      "id": "mine",
+      "title": { "en": "My recipes", "ru": "Мои приёмы" },
+      "items": [
+        {
+          "keys": ":%s/old/new/g",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "Replace in the whole file", "ru": "Заменить во всём файле" },
+          "example": { "en": ":%s/old/new/gc — ask before each one", "ru": ":%s/old/new/gc — спрашивать про каждое" }
+        }
+      ]
+    }
+  ]
+}
+```
+
+`kind` is `key` (rendered as key chips) or `cmd` (rendered as a literal
+command); `needs` optionally names the plugin an entry depends on.
 
 ### Waybar
 
@@ -99,6 +138,7 @@ Left click opens the window, right click rebuilds the cache.
 | `NVIM_KEYS_LANG` | `en` or `ru`, overriding the system locale |
 | `NVIM_KEYS_ICON` | Replace the Nerd Font glyph in the Waybar module |
 | `NVIM_KEYS_HOME` | Where the installed Lua/GUI files live |
+| `NVIM_KEYS_RECIPES` | Use this recipes file instead of the shipped one |
 | `NVIM_APPNAME` | Respected when looking for your Neovim config |
 
 ## Notes and limits

@@ -5,6 +5,7 @@
 #   nvim-keys dump      rebuild the cache (runs a headless Neovim)
 #   nvim-keys waybar    JSON for a Waybar custom module
 #   nvim-keys list      plain text listing
+#   nvim-keys recipes   hand-written cheatsheet with examples
 #   nvim-keys json      print the raw cache
 set -euo pipefail
 
@@ -21,11 +22,16 @@ if [[ -f "$here/../lua/dump.lua" ]]; then
     ROOT="$(cd "$here/.." && pwd)"          # git checkout: bin/nvim-keys
     LUA_DIR="$ROOT/lua"
     GUI="$ROOT/gui/nvim-keys-gui.py"
+    RECIPES="$ROOT/data/recipes.json"
 else
     ROOT="${NVIM_KEYS_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/nvim-keys}"
     LUA_DIR="$ROOT"
     GUI="$ROOT/gui.py"
+    RECIPES="$ROOT/recipes.json"
 fi
+
+# Your own recipes, merged after the shipped ones
+USER_RECIPES="${XDG_CONFIG_HOME:-$HOME/.config}/nvim-keys/recipes.json"
 
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/nvim-keys"
 CACHE="$CACHE_DIR/keymaps.json"
@@ -101,14 +107,38 @@ list)
     jq -r '.keymaps[] | "\(.plugin)\t\(.mode)\t\(.display)\t\(.desc)"' "$CACHE" |
         column -t -s $'\t'
     ;;
+recipes)
+    need_jq
+    lang="${NVIM_KEYS_LANG:-${LC_ALL:-${LC_MESSAGES:-${LANG:-en}}}}"
+    lang="${lang:0:2}"
+    found=0
+    for file in "${NVIM_KEYS_RECIPES:-$RECIPES}" "$USER_RECIPES"; do
+        [[ -s "$file" ]] || continue
+        found=1
+        jq -r --arg lang "$lang" '
+            def text($v): $v[$lang] // $v.en // "";
+            def pad($n): . + (" " * ([1, $n - length] | max));
+            .categories[]
+            | "\n== " + text(.title) + " ==",
+              (.items[]
+               | "  " + (.keys | pad(26))
+                 + text(.desc)
+                 + (if .needs then "  [" + .needs + "]" else "" end),
+                 (if (text(.example) | length) > 0
+                  then "  " + ("" | pad(26)) + text(.example)
+                  else empty end))
+        ' "$file"
+    done
+    ((found)) || die "no recipes file found ($RECIPES)"
+    ;;
 json)
     ensure_cache
     cat "$CACHE"
     ;;
 -h | --help | help)
-    sed -n '2,10p' "$self" | sed 's/^# \{0,1\}//'
+    sed -n '2,11p' "$self" | sed 's/^# \{0,1\}//'
     ;;
 *)
-    die "unknown command '${1}' (try: gui, dump, waybar, list, json)"
+    die "unknown command '${1}' (try: gui, dump, waybar, list, recipes, json)"
     ;;
 esac
