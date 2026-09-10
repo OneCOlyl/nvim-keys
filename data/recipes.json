@@ -1,0 +1,448 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "jumps",
+      "title": { "en": "Jumping to a line", "ru": "Прыжки по строкам" },
+      "items": [
+        {
+          "keys": ":42",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "Go to line 42", "ru": "Перейти на строку 42" },
+          "example": {
+            "en": ":42<CR> — line 42, :$ — last line, :1 — first",
+            "ru": ":42<CR> — строка 42, :$ — последняя строка, :1 — первая"
+          }
+        },
+        {
+          "keys": "42G",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Same jump without the command line", "ru": "Тот же прыжок, без командной строки" },
+          "example": {
+            "en": "10G — line 10; G alone — end of file; 1G — beginning",
+            "ru": "10G — строка 10; просто G — конец файла; 1G — начало"
+          }
+        },
+        {
+          "keys": "gg",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Beginning of the file", "ru": "Начало файла" },
+          "example": {
+            "en": "gg=G — reindent the whole file: gg to the top, = over the range up to G",
+            "ru": "gg=G — переотступить весь файл: gg в начало, = по диапазону до G"
+          }
+        },
+        {
+          "keys": "50%",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Jump by percentage of the file", "ru": "Прыжок по проценту файла" },
+          "example": {
+            "en": "50% — middle, 90% — near the end",
+            "ru": "50% — середина, 90% — ближе к концу"
+          }
+        },
+        {
+          "keys": "H",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Top of the visible screen (M — middle, L — bottom)", "ru": "Верх видимого экрана (M — середина, L — низ)" },
+          "example": {
+            "en": "L then dH — delete from the bottom of the screen up to the top",
+            "ru": "L, затем dH — удалить от низа экрана до верха"
+          }
+        },
+        {
+          "keys": "zz",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Scroll so the cursor line sits in the middle (zt — top, zb — bottom)", "ru": "Прокрутить так, чтобы строка курсора была по центру (zt — вверху, zb — внизу)" },
+          "example": {
+            "en": "42G zz — jump to line 42 and center it",
+            "ru": "42G zz — прыгнуть на строку 42 и поставить её по центру"
+          }
+        },
+        {
+          "keys": "<C-d>",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Half a screen down (<C-u> up, <C-f>/<C-b> full screen)", "ru": "Полэкрана вниз (<C-u> вверх, <C-f>/<C-b> — целый экран)" },
+          "example": {
+            "en": "Some configs rebind <C-d>; then use <C-f> or check the keymap list",
+            "ru": "В некоторых конфигах <C-d> перебит — тогда <C-f> или посмотри список сочетаний"
+          }
+        },
+        {
+          "keys": "}",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Next blank line ({ — previous): paragraph and block hopping", "ru": "Следующая пустая строка ({ — предыдущая): прыжки по абзацам и блокам" },
+          "example": {
+            "en": "d} — delete up to the next blank line",
+            "ru": "d} — удалить до следующей пустой строки"
+          }
+        },
+        {
+          "keys": "%",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Jump to the matching bracket", "ru": "Прыжок к парной скобке" },
+          "example": {
+            "en": "On a ( it jumps to the closing ); d% deletes the whole bracketed block",
+            "ru": "Стоя на ( прыгает на закрывающую ); d% удаляет весь блок в скобках"
+          }
+        },
+        {
+          "keys": "5j",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Five lines down (5k — up), the count is any number", "ru": "Пять строк вниз (5k — вверх), число любое" },
+          "example": {
+            "en": "Only practical with relative numbers: the gutter shows the count directly",
+            "ru": "Удобно только с относительными номерами: в колонке сразу видно нужное число"
+          }
+        },
+        {
+          "keys": ":set relativenumber",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "Relative line numbers, so counted jumps become readable", "ru": "Относительные номера строк, чтобы прыжки со счётчиком стали читаемыми" },
+          "example": {
+            "en": ":set rnu — on, :set nornu — off; in Lua config: vim.opt.relativenumber = true",
+            "ru": ":set rnu — включить, :set nornu — выключить; в Lua-конфиге: vim.opt.relativenumber = true"
+          }
+        },
+        {
+          "keys": "s",
+          "kind": "key",
+          "mode": "n",
+          "needs": "flash.nvim",
+          "desc": { "en": "Type two characters, labels appear on every match, press a label to jump", "ru": "Набираешь два символа, на совпадениях появляются метки, жмёшь метку — прыжок" },
+          "example": {
+            "en": "s + fu — labels on every \"fu\"; press the label letter and the cursor is there",
+            "ru": "s + fu — метки на всех «fu»; жмёшь букву метки, курсор там"
+          }
+        },
+        {
+          "keys": "S",
+          "kind": "key",
+          "mode": "n",
+          "needs": "flash.nvim",
+          "desc": { "en": "Labels on treesitter nodes: function, block, argument", "ru": "Метки по узлам treesitter: функция, блок, аргумент" },
+          "example": {
+            "en": "S inside a function — jump to its start or to a nested block",
+            "ru": "S внутри функции — прыжок к её началу или к вложенному блоку"
+          }
+        },
+        {
+          "keys": "f",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Jump to a character inside the line (t stops before it, F/T search backwards)", "ru": "Прыжок к символу внутри строки (t — до него, F/T — назад)" },
+          "example": {
+            "en": "f( — to the next (; ; repeats forward, , backwards; dt) deletes up to )",
+            "ru": "f( — к следующей (; ; повторяет вперёд, , назад; dt) удаляет до )"
+          }
+        }
+      ]
+    },
+    {
+      "id": "search",
+      "title": { "en": "Finding the line you need", "ru": "Поиск нужной строки" },
+      "items": [
+        {
+          "keys": "/text",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "Search forward (?text — backwards)", "ru": "Поиск вперёд (?text — назад)" },
+          "example": {
+            "en": "/TODO<CR>, then n for the next hit, N for the previous",
+            "ru": "/TODO<CR>, затем n — следующее совпадение, N — предыдущее"
+          }
+        },
+        {
+          "keys": "*",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Search for the word under the cursor forward (# — backwards)", "ru": "Искать слово под курсором вперёд (# — назад)" },
+          "example": {
+            "en": "Cursor on userName, press * — every other userName, n walks them",
+            "ru": "Курсор на userName, жмёшь * — все остальные userName, n листает"
+          }
+        },
+        {
+          "keys": ":noh",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "Clear the search highlight", "ru": "Убрать подсветку поиска" },
+          "example": {
+            "en": ":noh<CR> — highlighting is gone, n still works",
+            "ru": ":noh<CR> — подсветка ушла, n продолжает работать"
+          }
+        },
+        {
+          "keys": ":g/pattern/#",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "List every matching line with its number", "ru": "Показать все подходящие строки с номерами" },
+          "example": {
+            "en": ":g/TODO/#<CR> — a numbered list, then :42 to jump to one",
+            "ru": ":g/TODO/#<CR> — нумерованный список, потом :42 — прыжок на нужную"
+          }
+        },
+        {
+          "keys": "<C-o>",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Back through the jump history (<C-i> — forward)", "ru": "Назад по истории прыжков (<C-i> — вперёд)" },
+          "example": {
+            "en": "gd jumped to a definition in another file — <C-o> brings you back",
+            "ru": "gd увёл к определению в другом файле — <C-o> возвращает обратно"
+          }
+        },
+        {
+          "keys": "''",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Back to the position before the last jump (`. — to the last edit)", "ru": "К позиции до последнего прыжка (`. — к последней правке)" },
+          "example": {
+            "en": "G to the end of the file, '' back to where you were",
+            "ru": "G в конец файла, '' — обратно туда, где был"
+          }
+        },
+        {
+          "keys": ":jumps",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "The whole jump list with files and line numbers", "ru": "Весь список прыжков с файлами и номерами строк" },
+          "example": {
+            "en": ":jumps<CR> — see the history, then <C-o>/<C-i> to walk it",
+            "ru": ":jumps<CR> — смотришь историю, потом <C-o>/<C-i> ходишь по ней"
+          }
+        },
+        {
+          "keys": "<leader>sb",
+          "kind": "key",
+          "mode": "n",
+          "needs": "telescope.nvim",
+          "desc": { "en": "Fuzzy search over the lines of the current buffer", "ru": "Нечёткий поиск по строкам текущего буфера" },
+          "example": {
+            "en": "<leader>sb, type part of the line, Enter — the cursor lands on it",
+            "ru": "<leader>sb, набираешь кусок строки, Enter — курсор на ней"
+          }
+        },
+        {
+          "keys": "<leader>sg",
+          "kind": "key",
+          "mode": "n",
+          "needs": "telescope.nvim",
+          "desc": { "en": "Live grep across the project", "ru": "Живой grep по всему проекту" },
+          "example": {
+            "en": "<leader>sg, type createUser — matches from every file",
+            "ru": "<leader>sg, набираешь createUser — совпадения из всех файлов"
+          }
+        }
+      ]
+    },
+    {
+      "id": "undo",
+      "title": { "en": "Undoing changes", "ru": "Отмена изменений" },
+      "items": [
+        {
+          "keys": "u",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Undo one change (<C-r> — redo)", "ru": "Отменить одно изменение (<C-r> — вернуть)" },
+          "example": {
+            "en": "3u — three steps back, 3<C-r> — three steps forward",
+            "ru": "3u — три шага назад, 3<C-r> — три шага вперёд"
+          }
+        },
+        {
+          "keys": "U",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Undo every change made on the last touched line", "ru": "Отменить все правки на последней тронутой строке" },
+          "example": {
+            "en": "Mangled one line with several edits — U restores it in one press",
+            "ru": "Испортил строку несколькими правками — U возвращает её одним нажатием"
+          }
+        },
+        {
+          "keys": ":earlier 10s",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "Rewind the buffer by time (:later 10s — forward)", "ru": "Отмотать буфер по времени (:later 10s — вперёд)" },
+          "example": {
+            "en": ":earlier 2m — the file as it was two minutes ago; :later 2m — back again",
+            "ru": ":earlier 2m — файл как две минуты назад; :later 2m — обратно"
+          }
+        },
+        {
+          "keys": ":earlier 1f",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "Rewind by file states — writes, not keystrokes", "ru": "Отмотать по состояниям файла — по записям, а не по нажатиям" },
+          "example": {
+            "en": ":earlier 1f — the content as of the previous :w",
+            "ru": ":earlier 1f — содержимое на момент прошлого :w"
+          }
+        },
+        {
+          "keys": "g-",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Walk the undo tree by state, across branches (g+ — forward)", "ru": "Ходить по дереву отмены между ветками (g+ — вперёд)" },
+          "example": {
+            "en": "You pressed u and kept typing — the old branch is not lost, g- gets back to it",
+            "ru": "Нажал u и продолжил печатать — старая ветка не потеряна, g- возвращает к ней"
+          }
+        },
+        {
+          "keys": ":undolist",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "List of undo branches with their numbers", "ru": "Список веток отмены с номерами" },
+          "example": {
+            "en": ":undolist<CR>, then :undo 42 — jump straight to state 42",
+            "ru": ":undolist<CR>, затем :undo 42 — прыжок сразу к состоянию 42"
+          }
+        },
+        {
+          "keys": ":set undofile",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "Persist undo history across restarts", "ru": "Сохранять историю отмены между перезапусками" },
+          "example": {
+            "en": ":set undofile? — check; LazyVim enables it, history lives in ~/.local/state/nvim/undo",
+            "ru": ":set undofile? — проверить; LazyVim включает это, история лежит в ~/.local/state/nvim/undo"
+          }
+        },
+        {
+          "keys": "u",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Does NOT undo filesystem operations", "ru": "НЕ отменяет операции с файловой системой" },
+          "example": {
+            "en": "A deleted or renamed file is not a buffer edit: recover with git checkout -- path or a backup",
+            "ru": "Удалённый или переименованный файл — не правка буфера: вернуть только через git checkout -- path или бэкап"
+          }
+        }
+      ]
+    },
+    {
+      "id": "files",
+      "title": { "en": "Files: delete, rename, create", "ru": "Файлы: удалить, переименовать, создать" },
+      "items": [
+        {
+          "keys": "d",
+          "kind": "key",
+          "mode": "n",
+          "needs": "neo-tree.nvim",
+          "desc": { "en": "Delete the file under the cursor in the tree, with confirmation", "ru": "Удалить файл под курсором в дереве, с подтверждением" },
+          "example": {
+            "en": "Open the tree, put the cursor on the file, press d, confirm with y",
+            "ru": "Открыть дерево, навести курсор на файл, нажать d, подтвердить y"
+          }
+        },
+        {
+          "keys": "V",
+          "kind": "key",
+          "mode": "n",
+          "needs": "neo-tree.nvim",
+          "desc": { "en": "Select several rows in the tree, then d deletes them all", "ru": "Выделить несколько строк в дереве, затем d удалит их разом" },
+          "example": {
+            "en": "V, extend with j over three files, d, confirm",
+            "ru": "V, растянуть j на три файла, d, подтвердить"
+          }
+        },
+        {
+          "keys": "r",
+          "kind": "key",
+          "mode": "n",
+          "needs": "neo-tree.nvim",
+          "desc": { "en": "Rename (a — new file, A — new directory)", "ru": "Переименовать (a — новый файл, A — новая папка)" },
+          "example": {
+            "en": "a and a name ending in / creates a directory: components/",
+            "ru": "a и имя, оканчивающееся на /, создаёт папку: components/"
+          }
+        },
+        {
+          "keys": "c",
+          "kind": "key",
+          "mode": "n",
+          "needs": "neo-tree.nvim",
+          "desc": { "en": "Copy; m — move, x — cut, p — paste, y — copy the path", "ru": "Копировать; m — переместить, x — вырезать, p — вставить, y — скопировать путь" },
+          "example": {
+            "en": "x on a file, move to another directory, p — the file is moved there",
+            "ru": "x на файле, перейти в другую папку, p — файл переехал туда"
+          }
+        },
+        {
+          "keys": "?",
+          "kind": "key",
+          "mode": "n",
+          "needs": "neo-tree.nvim",
+          "desc": { "en": "All tree mappings in one popup", "ru": "Все сочетания дерева в одном окне" },
+          "example": {
+            "en": "Press ? inside the tree — a searchable list of its keys",
+            "ru": "Нажать ? внутри дерева — список его клавиш"
+          }
+        },
+        {
+          "keys": ":call delete(expand('%')) | bdelete!",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "Delete the file of the current buffer and close the buffer", "ru": "Удалить файл текущего буфера и закрыть буфер" },
+          "example": {
+            "en": "No file tree needed; the buffer disappears together with the file on disk",
+            "ru": "Дерево не нужно; буфер исчезает вместе с файлом на диске"
+          }
+        },
+        {
+          "keys": ":!rm %",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "Same through the shell; the buffer stays open until :bd!", "ru": "То же через shell; буфер остаётся открытым до :bd!" },
+          "example": {
+            "en": ":!rm %<CR> then :bd!<CR>; % is the path of the current file",
+            "ru": ":!rm %<CR>, затем :bd!<CR>; % — путь текущего файла"
+          }
+        },
+        {
+          "keys": ":sav newname",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "Save under a new name and keep editing it (the old file stays)", "ru": "Сохранить под новым именем и продолжить править его (старый файл остаётся)" },
+          "example": {
+            "en": ":sav util.ts<CR> — now you edit util.ts, the original is untouched",
+            "ru": ":sav util.ts<CR> — теперь правишь util.ts, оригинал не тронут"
+          }
+        },
+        {
+          "keys": ":e path",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "Open a file by path; a missing one is created on the first write", "ru": "Открыть файл по пути; несуществующий создастся при первой записи" },
+          "example": {
+            "en": ":e src/new.ts<CR>, type, :w<CR> — the file now exists",
+            "ru": ":e src/new.ts<CR>, печатаешь, :w<CR> — файл появился"
+          }
+        },
+        {
+          "keys": ":!git checkout -- %",
+          "kind": "cmd",
+          "mode": "c",
+          "desc": { "en": "Restore the current file from git after a bad delete or edit", "ru": "Вернуть текущий файл из git после неудачного удаления или правки" },
+          "example": {
+            "en": "For a deleted file use the explicit path: :!git checkout -- src/gone.ts",
+            "ru": "Для удалённого файла указать путь явно: :!git checkout -- src/gone.ts"
+          }
+        }
+      ]
+    }
+  ]
+}

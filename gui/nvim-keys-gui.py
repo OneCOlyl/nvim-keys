@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """nvim-keys — GTK4 window listing every Neovim keymap, grouped by plugin.
 
-Left pane: sources (plugins, Neovim itself, your own config).
+Left pane: sources (plugins, Neovim itself, your own config, hand-written recipes).
 Right pane: keymaps, human-readable, with the original vim notation below.
 Top: search across key, description, plugin and command.
 """
@@ -55,6 +55,9 @@ STRINGS = {
         "$config": "My config",
         "$neovim": "Neovim built-ins",
         "$other": "Other",
+        "$recipes": "Recipes",
+        "needs": "needs {plugin}",
+        "example_tip": "Example: {example}",
         "refresh": "Rebuild the list (Ctrl+R)",
         "help": "How to read the notation (F1)",
         "leader": "Leader",
@@ -90,6 +93,10 @@ STRINGS = {
             "Modes:\n"
             "  n — normal, i — insert, v/x/s — visual and select,\n"
             "  o — operator pending (after d, y, c), t — terminal, c — command line\n\n"
+            "“Recipes” in the source list is a hand-written cheatsheet: jumps, "
+            "search, undo and file operations, each with an example. Rows starting "
+            "with “:” are Ex commands — type them in the command line and press "
+            "Enter.\n\n"
             "Enter — copy the key, Ctrl+R — rebuild, Esc — close."
         ),
         "help_ok": "Got it",
@@ -102,6 +109,9 @@ STRINGS = {
         "$config": "Моя конфигурация",
         "$neovim": "Neovim (встроенные)",
         "$other": "Прочее",
+        "$recipes": "Приёмы",
+        "needs": "нужен {plugin}",
+        "example_tip": "Пример: {example}",
         "refresh": "Пересобрать список (Ctrl+R)",
         "help": "Как читать обозначения (F1)",
         "leader": "Leader",
@@ -136,6 +146,10 @@ STRINGS = {
             "Режимы:\n"
             "  n — обычный, i — вставка, v/x/s — визуальный и выделение,\n"
             "  o — ожидание объекта (после d, y, c), t — терминал, c — командная строка\n\n"
+            "«Приёмы» в списке источников — это шпаргалка, написанная руками: "
+            "прыжки, поиск, отмена и операции с файлами, каждый пункт с примером. "
+            "Строки, начинающиеся с «:», — это Ex-команды: набираются в командной "
+            "строке и подтверждаются Enter.\n\n"
             "Enter — скопировать сочетание, Ctrl+R — пересобрать, Esc — закрыть."
         ),
         "help_ok": "Понятно",
@@ -192,6 +206,17 @@ CSS = b"""
   border-radius: 6px;
   background: alpha(currentColor, 0.10);
   opacity: 0.75;
+}
+.cmdchip {
+  font-family: monospace;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: alpha(currentColor, 0.12);
+}
+.example {
+  font-family: monospace;
+  font-size: 0.85em;
+  opacity: 0.7;
 }
 .plugin-name { font-weight: bold; }
 .dim { opacity: 0.6; }
@@ -289,9 +314,71 @@ def load_keymaps() -> tuple[list[dict], str, str]:
     return data.get("keymaps", []), tr("updated", stamp=stamp), data.get("mapleader", "")
 
 
+SRC_RECIPES = "$recipes"
+
+
+def recipe_files() -> list[Path]:
+    """Shipped recipes plus the user's own additions, in that order."""
+    paths: list[Path] = []
+    env = os.environ.get("NVIM_KEYS_RECIPES")
+    if env:
+        paths.append(Path(env).expanduser())
+    else:
+        checkout = Path(__file__).resolve().parent.parent / "data" / "recipes.json"
+        home = os.environ.get("NVIM_KEYS_HOME") or os.path.join(
+            os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share")),
+            "nvim-keys",
+        )
+        paths.append(checkout if checkout.exists() else Path(home) / "recipes.json")
+    config_home = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
+    paths.append(Path(config_home) / "nvim-keys" / "recipes.json")
+    return [p for p in paths if p.exists()]
+
+
+def pick_text(value) -> str:
+    """Recipe texts are {"en": …, "ru": …}; plain strings are allowed too."""
+    if isinstance(value, dict):
+        return value.get(LANG) or value.get("en") or next(iter(value.values()), "")
+    return value or ""
+
+
+def load_recipes() -> list[dict]:
+    """Hand-written cheatsheet entries, shaped like keymap rows."""
+    items: list[dict] = []
+    for path in recipe_files():
+        try:
+            data = json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        for cat in data.get("categories", []):
+            category = pick_text(cat.get("title"))
+            for it in cat.get("items", []):
+                keys = it.get("keys") or ""
+                if not keys:
+                    continue
+                items.append(
+                    {
+                        "mode": it.get("mode", "n"),
+                        "lhs": keys,
+                        "display": keys,
+                        "rhs": "",
+                        "desc": pick_text(it.get("desc")),
+                        "plugin": SRC_RECIPES,
+                        "source": str(path),
+                        "pending": False,
+                        "kind": it.get("kind", "key"),
+                        "example": pick_text(it.get("example")),
+                        "category": category,
+                        "needs": it.get("needs", ""),
+                        "order": len(items),
+                    }
+                )
+    return items
+
+
 def sort_sources(counts: dict[str, int]) -> list[str]:
-    """Own config and built-ins on top, plugins by keymap count."""
-    priority = {"$config": 0, "$neovim": 2, "$other": 4}
+    """Own config, recipes and built-ins on top, plugins by keymap count."""
+    priority = {"$config": 0, SRC_RECIPES: 1, "$neovim": 2, "$other": 4}
 
     def key(name: str):
         return (priority.get(name, 3), -counts[name], source_label(name).lower())
@@ -395,12 +482,106 @@ class KeyRow(Gtk.ListBoxRow):
         ).lower()
 
 
+class RecipeRow(Gtk.ListBoxRow):
+    """A hand-written cheatsheet entry: keys or an Ex command, plus an example."""
+
+    def __init__(self, item: dict):
+        super().__init__()
+        self.item = item
+        self.is_cmd = item.get("kind") == "cmd"
+        self.human = [item["display"]] if self.is_cmd else humanize(item["display"])
+
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        box.set_margin_top(6)
+        box.set_margin_bottom(6)
+        box.set_margin_start(10)
+        box.set_margin_end(10)
+
+        chips = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        chips.set_size_request(300, -1)
+        chips.set_valign(Gtk.Align.CENTER)
+        if self.is_cmd:
+            chip = Gtk.Label(label=item["display"], xalign=0)
+            chip.set_ellipsize(Pango.EllipsizeMode.END)
+            chip.set_max_width_chars(34)
+            chip.add_css_class("cmdchip")
+            chips.append(chip)
+        else:
+            for idx, part in enumerate(self.human[:6]):
+                if idx:
+                    sep = Gtk.Label(label="›")
+                    sep.add_css_class("dim")
+                    chips.append(sep)
+                chip = Gtk.Label(label=part)
+                chip.add_css_class("keychip")
+                chips.append(chip)
+        box.append(chips)
+
+        mode = Gtk.Label(label=item["mode"])
+        mode.add_css_class("modechip")
+        mode.set_tooltip_text(MODE_LABELS.get(item["mode"], item["mode"]))
+        box.append(mode)
+
+        text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1, hexpand=True)
+        desc = Gtk.Label(label=item["desc"] or tr("no_desc"), xalign=0)
+        desc.set_ellipsize(Pango.EllipsizeMode.END)
+        text.append(desc)
+        if item.get("example"):
+            example = Gtk.Label(label=item["example"], xalign=0)
+            example.add_css_class("example")
+            example.set_ellipsize(Pango.EllipsizeMode.END)
+            text.append(example)
+        sub_parts = [item.get("category", "")]
+        if item.get("needs"):
+            sub_parts.append(tr("needs", plugin=item["needs"]))
+        sub = Gtk.Label(label=" · ".join(p for p in sub_parts if p), xalign=0)
+        sub.add_css_class("dim")
+        sub.set_ellipsize(Pango.EllipsizeMode.END)
+        text.append(sub)
+        box.append(text)
+
+        self.set_child(box)
+        self.set_tooltip_text(self._tooltip())
+
+    def _tooltip(self) -> str:
+        it = self.item
+        tip = [it["display"] if self.is_cmd else " › ".join(self.human)]
+        if not self.is_cmd and len(self.human) > 1:
+            tip.append(tr("seq_tip"))
+        if it["desc"]:
+            tip.append(it["desc"])
+        if it.get("example"):
+            tip.append(tr("example_tip", example=it["example"]))
+        if it.get("needs"):
+            tip.append(tr("needs", plugin=it["needs"]))
+        tip.append(tr("copy_tip"))
+        return "\n".join(tip)
+
+    def haystack(self) -> str:
+        it = self.item
+        human = " ".join(self.human)
+        return " ".join(
+            (
+                it["display"],
+                human,
+                human.replace(" + ", "+"),
+                it["desc"],
+                it.get("example", ""),
+                it.get("category", ""),
+                it.get("needs", ""),
+                source_label(it["plugin"]),
+                it["mode"],
+                MODE_LABELS.get(it["mode"], ""),
+            )
+        ).lower()
+
+
 class Window(Adw.ApplicationWindow):
     def __init__(self, app: Adw.Application):
         super().__init__(application=app, title=tr("title"))
         self.set_default_size(1080, 720)
 
-        self.rows: list[KeyRow] = []
+        self.rows: list[KeyRow | RecipeRow] = []
         self.selected_source: str | None = None
         self.mode_filter = "all"
         self.query = ""
@@ -482,13 +663,15 @@ class Window(Adw.ApplicationWindow):
     # ── data ──────────────────────────────────────────────────────────────
     def load(self):
         keymaps, self.stamp, self.leader = load_keymaps()
+        # recipes come from a JSON file, not from the dump: no rebuild needed
+        entries = keymaps + load_recipes()
 
         counts: dict[str, int] = {}
-        for it in keymaps:
+        for it in entries:
             counts[it["plugin"]] = counts.get(it["plugin"], 0) + 1
 
         self.source_list.remove_all()
-        self._add_source_row(None, tr("all_sources"), len(keymaps))
+        self._add_source_row(None, tr("all_sources"), len(entries))
         for name in sort_sources(counts):
             self._add_source_row(name, source_label(name), counts[name])
         self.source_list.select_row(self.source_list.get_row_at_index(0))
@@ -496,10 +679,16 @@ class Window(Adw.ApplicationWindow):
         self.key_list.remove_all()
         self.rows = []
         for it in sorted(
-            keymaps,
-            key=lambda i: (source_label(i["plugin"]).lower(), i["display"], i["mode"]),
+            entries,
+            key=lambda i: (
+                source_label(i["plugin"]).lower(),
+                # recipes keep the order of the file, keymaps sort by key
+                i.get("order", 0),
+                i["display"],
+                i["mode"],
+            ),
         ):
-            row = KeyRow(it)
+            row = RecipeRow(it) if it["plugin"] == SRC_RECIPES else KeyRow(it)
             self.rows.append(row)
             self.key_list.append(row)
 
@@ -546,7 +735,7 @@ class Window(Adw.ApplicationWindow):
         threading.Thread(target=worker, daemon=True).start()
 
     # ── filtering ─────────────────────────────────────────────────────────
-    def filter_row(self, row: KeyRow) -> bool:
+    def filter_row(self, row: KeyRow | RecipeRow) -> bool:
         it = row.item
         if self.selected_source and it["plugin"] != self.selected_source:
             return False
@@ -596,7 +785,7 @@ class Window(Adw.ApplicationWindow):
         dialog.add_response("ok", tr("help_ok"))
         dialog.present(self)
 
-    def on_activate(self, _list, row: KeyRow):
+    def on_activate(self, _list, row: KeyRow | RecipeRow):
         self.copy(row.item["display"])
 
     def copy(self, text: str):
