@@ -45,11 +45,12 @@ install_file "$ROOT/lua/prelude.lua" "$SHARE_DIR/prelude.lua"
 install_file "$ROOT/lua/dump.lua" "$SHARE_DIR/dump.lua"
 install_file "$ROOT/gui/nvim-keys-gui.py" "$SHARE_DIR/gui.py"
 install_file "$ROOT/data/recipes.json" "$SHARE_DIR/recipes.json"
+install_file "$ROOT/data/descriptions.json" "$SHARE_DIR/descriptions.json"
 chmod +x "$BIN_DIR/nvim-keys"
 
 echo "Installed:"
 echo "  $BIN_DIR/nvim-keys"
-echo "  $SHARE_DIR/{prelude.lua,dump.lua,gui.py,recipes.json}"
+echo "  $SHARE_DIR/{prelude.lua,dump.lua,gui.py,recipes.json,descriptions.json}"
 
 missing=()
 for dep in nvim python3 jq; do

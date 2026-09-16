@@ -346,7 +346,8 @@ for _, it in ipairs(items) do
   it.plugin = it.plugin or SRC_NEOVIM
   it.display = display_lhs(it.lhs)
   it.group = it.desc:sub(1, 1) == "+" -- which-key prefix group
-  if it.desc == "" then it.desc = it.rhs end
+  -- an empty desc stays empty: the UI falls back to the rhs itself and can
+  -- make it readable, while "desc = rhs" would look like a real description
   it.source = it.source or ""
   it.buffer = it.buffer or ""
   it.spec_owner = nil

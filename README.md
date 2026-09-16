@@ -21,11 +21,17 @@ everything up front — including mappings from plugins that are still lazy-load
   `Leader › b › j`; the original notation stays visible underneath.
 - **Search everything.** Key, description, command, plugin, mode — all at once,
   in both notations (`ctrl+p` and `<C-P>` both match).
+- **Search by pressing the chord.** `Ctrl+K` starts capture mode: press
+  `Ctrl+I`, or `Space` then `s`, and the list shows what that chord does in
+  Neovim.
+- **Readable descriptions.** Cryptic ones (`<lua function>`, `:cpfile`,
+  `<Plug>(MatchitNormalForward)`) are replaced with plain sentences.
 - **Status bar module.** Waybar module with a live keymap count; click to open.
 - **Recipes.** A hand-written cheatsheet next to the collected keymaps: jumping
   to a line, finding it, undoing changes, deleting and renaming files — each
   entry with a concrete example. Extend it with your own file.
-- **English and Russian UI**, picked from your locale.
+- **English and Russian**, switched in the window (EN/RU) and remembered;
+  descriptions coming from plugins are translated by a dictionary.
 
 ## How it works
 
@@ -82,7 +88,34 @@ Uninstall with `./install.sh --uninstall`.
 | `nvim-keys json` | Print the raw cache |
 
 In the window: type to search, `Enter` copies the key, `F1` explains the
-notation, `Ctrl+R` rebuilds, `Esc` closes.
+notation, `Ctrl+K` captures a chord, `Ctrl+R` rebuilds, `Esc` closes.
+
+### Capture mode
+
+`Ctrl+K` (or the keyboard button in the header) turns the search field into a
+chord recorder: every press is added as a key chip and the list is filtered to
+the mappings that start with it. `Backspace` erases the last press, `Esc`
+leaves the mode. If nothing is mapped to the chord, the list falls back to rows
+that merely mention it — that is how built-ins like `<C-i>`, described in the
+recipes, still answer the question.
+
+### Descriptions
+
+Plugins describe their mappings in English, and some do not describe them at
+all. [`data/descriptions.json`](data/descriptions.json) is the layer that fixes
+both:
+
+- `noise` — descriptions that say nothing (`<lua function>`); such rows fall
+  back to the command itself, then to the key.
+- `rewrite` — regexes turning a cryptic description into a readable sentence in
+  both languages (`:cpfile`, `:help Y-default`, matchit's `<Plug>` maps).
+- `by_key` — text for a mapping nobody described, chosen by the key itself.
+- `translations.ru` — `phrases` (whole description), `tails` (the trailing
+  `(Root Dir)`, `(cwd)`, `(Trouble)`) and `words` as a last resort. Whatever is
+  not in the dictionary stays in English.
+
+Your own `~/.config/nvim-keys/descriptions.json` is merged on top, so you can
+fix or translate a single mapping without touching the shipped file.
 
 ### Recipes
 
@@ -135,10 +168,11 @@ Left click opens the window, right click rebuilds the cache.
 
 | Variable | Effect |
 | --- | --- |
-| `NVIM_KEYS_LANG` | `en` or `ru`, overriding the system locale |
+| `NVIM_KEYS_LANG` | `en` or `ru`, used until you pick a language in the window |
 | `NVIM_KEYS_ICON` | Replace the Nerd Font glyph in the Waybar module |
 | `NVIM_KEYS_HOME` | Where the installed Lua/GUI files live |
 | `NVIM_KEYS_RECIPES` | Use this recipes file instead of the shipped one |
+| `NVIM_KEYS_DESCRIPTIONS` | Use this descriptions file instead of the shipped one |
 | `NVIM_APPNAME` | Respected when looking for your Neovim config |
 
 ## Notes and limits

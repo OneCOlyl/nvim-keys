@@ -204,6 +204,16 @@
           }
         },
         {
+          "keys": "<C-i>",
+          "kind": "key",
+          "mode": "n",
+          "desc": { "en": "Forward through the jump history (<C-o> — back)", "ru": "Вперёд по истории прыжков (<C-o> — назад)" },
+          "example": {
+            "en": "Went back too far with <C-o> — <C-i> returns forward; it is the same key as Tab",
+            "ru": "Ушёл слишком далеко назад через <C-o> — <C-i> возвращает вперёд; это та же клавиша, что Tab"
+          }
+        },
+        {
           "keys": "''",
           "kind": "key",
           "mode": "n",
